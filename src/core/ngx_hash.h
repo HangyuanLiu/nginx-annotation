@@ -91,7 +91,7 @@ typedef struct {
 /*
  * ngx_table_elt_t是为http头部"量身定制"的
  * 其中key存储头部名称如(Content-Length)
- * value存储对应的值(1024)
+ * value存储对应的值字符串(1024)
  * lowecase_key是为了忽略http头部名称的大小写
  * hash用于快速检索头部
  * */

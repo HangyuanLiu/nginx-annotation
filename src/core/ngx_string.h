@@ -12,9 +12,9 @@
 #include <ngx_config.h>
 #include <ngx_core.h>
 
-
+//nginx字符串
 typedef struct {
-    size_t      len;
+    size_t      len;//字符串有效长度
     u_char     *data;
 } ngx_str_t;
 

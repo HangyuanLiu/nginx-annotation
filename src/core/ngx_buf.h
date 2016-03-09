@@ -16,7 +16,10 @@
 typedef void *            ngx_buf_tag_t;
 
 typedef struct ngx_buf_s  ngx_buf_t;
-
+/*
+ * 缓冲区ngx_buf_t 是Nginx处理大数据的关键数据结构，它既应用与内存数据
+ * 也应用于磁盘数据
+ * */
 struct ngx_buf_s {
 	/* pos通常是用来告诉使用者本次应该从pos这个位置开始处理内存中的数据,这样设置是因为
 	 * 同一个ngx_buf_t可能被多次反复处理.当然,pos的含义是由使用呀的模块定义的*/
@@ -31,7 +34,8 @@ struct ngx_buf_s {
     u_char          *start;         /* start of buffer */
     //与start成员对应,指向缓冲区内存的末尾(下界)
     u_char          *end;           /* end of buffer */
-    //表示当前缓冲区的类型,例如由哪个模块使用就指向这个模块ngx_module_t变量的地址
+    /*表示当前缓冲区的类型,例如由哪个模块使用就指向这个模块ngx_module_t变量的地址
+     * void*类型指针，可以是任意数据*/
     ngx_buf_tag_t    tag;
     //引用的文件
     ngx_file_t      *file;
@@ -73,13 +77,13 @@ struct ngx_buf_s {
 };
 
 /* 在处理http请求时会经常创建多个缓冲区来存放数据,
- * Nginx把缓冲区块简单地组织为一个单向链表
+ * Nginx把缓冲区块简单地组织为一个单向链表，在向用户发送http包体时，就要
+ * 传入ngx_chain_t链表对象
  * */
 struct ngx_chain_s {
     ngx_buf_t    *buf;	//指向当前的ngx_buf_t缓冲区
     /* 指向下一个ngx_chain_t,需要注意的是如果是最后一个ngx_chain_t,
-     * 那么必须将next置为null,否则永远不会发送成功,而且这个请求将一致
-     * 不会结束
+     * 那么必须将next置为null,否则永远不会发送成功,而且这个请求将一直不会结束
      * */
     ngx_chain_t  *next;
 };

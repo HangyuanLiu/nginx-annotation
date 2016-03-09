@@ -16,8 +16,8 @@
 typedef struct ngx_list_part_s  ngx_list_part_t;
 //描述链表的一个元素
 struct ngx_list_part_s {
-    void             *elts;	//指向数组的其实起始地址
-    ngx_uint_t        nelts;//表示数组中已经使用了多少个元素
+    void             *elts;	//指向数组的起始地址
+    ngx_uint_t        nelts;//表示数组中已经使用了多少个元素。nelts必须小于ngx_list_t结构体中的nalloc
     ngx_list_part_t  *next;
 };
 
@@ -34,6 +34,7 @@ typedef struct {
 //创建链表,n代表链表数组中,每个数组可以存储几个元素(相当于nalloc),size则为ngx_list_t中的size
 ngx_list_t *ngx_list_create(ngx_pool_t *pool, ngx_uint_t n, size_t size);
 
+//初始化一个已有的链表，被ngx_list_create调用
 static ngx_inline ngx_int_t
 ngx_list_init(ngx_list_t *list, ngx_pool_t *pool, ngx_uint_t n, size_t size)
 {
