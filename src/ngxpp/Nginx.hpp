@@ -5,7 +5,7 @@ extern "C"{
 #include <ngx_http.h>
 }
 #include <cassert>
-#include <boost/core/ignore_unused.hpp>
+//#include <boost/core/ignore_unused.hpp>
 
 #define ngx_cpp_version 1000000
 #define NGX_CPP_VERSION "1.0.0"

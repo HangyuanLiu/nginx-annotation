@@ -216,8 +216,16 @@ typedef struct {
     ngx_array_t               *ports;
 
     ngx_uint_t                 try_files;       /* unsigned  try_files:1 */
-    //任意的http模块需要在特定阶段处理http请求时,必须首先在phases[]数组中
-    //添加自己实现的ngx_http_handler_pt方法
+    /*
+     * 任意的http模块需要在特定阶段处理http请求时,必须首先在phases[]数组中
+     * 添加自己实现的ngx_http_handler_pt方法
+     *
+     * 由于很多模块都会工作在NGX_HTTP_CONTENT_PHASE阶段,如果都使用添加
+     * phases数组的方式可能会导致数组元素过多,运行效率低,也恨容易导致模块冲突
+     * 所以Nginx单独为内容处理函数提供另外存储位置
+     * ngx_http_core_module的location配置数据结构ngx_http_core_loc_conf_t里
+     * 有一个成员handler,它直接确定了该location的处理函数
+    */
     ngx_http_phase_t           phases[NGX_HTTP_LOG_PHASE + 1];
 } ngx_http_core_main_conf_t;
 
@@ -398,7 +406,12 @@ struct ngx_http_core_loc_conf_s {
 
     uint32_t      limit_except;
     void        **limit_except_loc_conf;
-
+    /*
+    * 由于很多模块都会工作在NGX_HTTP_CONTENT_PHASE阶段,如果都使用添加
+    * phases数组的方式可能会导致数组元素过多,运行效率低,也恨容易导致模块冲突
+    * 所以Nginx单独为内容处理函数提供另外存储位置
+    * ngx_http_core_module的location配置数据结构ngx_http_core_loc_conf_t里
+    * 有一个成员handler,它直接确定了该location的处理函数*/
     ngx_http_handler_pt  handler;
 
     /* location name length for inclusive location with inherited alias */

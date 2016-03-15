@@ -430,6 +430,9 @@ ngx_conf_bitmask_t  ngx_http_upstream_ignore_headers_masks[] = {
 /* Nginx Http框架接收到下游的连接就会调用ngx_http_create_request
  * 创建ngx_http_request_t结构体,这时成员upstream默认是空指针,表示不使用upstream
  * 要启用Nginx的请求转发机制,就必须要调用ngx_http_upstream_create创建upstream对象
+ *
+ * 对每一个要使用upstream的请求,必须调用且只能调用一次ngx_http_upstream_create方法,
+ * 它会初始化r->upstream成员
  * */
 ngx_int_t
 ngx_http_upstream_create(ngx_http_request_t *r)

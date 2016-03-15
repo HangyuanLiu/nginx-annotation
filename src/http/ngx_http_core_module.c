@@ -2467,7 +2467,18 @@ ngx_http_gzip_quantity(u_char *p, u_char *last)
 
 #endif
 
-
+/*
+ * ngx_http_request_t *r 是当前的请求,也就是父请求
+ * ngx_str_t *uri 子请求的uri,它对究竟选用nginx.conf配置文件中的哪个模块来处理子请求起决定性作用
+ * ngx_str_t *args 子请求的uri参数,如果没有参数,可以传送NULL空指针
+ * ngx_http_request_t **psr psr是输出参数而不是输入参数,它将把ngx_http_subrequest生成的子请求
+ * 						传出来.一般,我们先建立一个子请求的空指针ngx_http_request *psr,再把它的
+ * 						地址&psr传入到ngx_http_subrequest方法中,如果ngx_http_subrequest返回
+ * 						成功,psr就是指向建立好的子请求
+ * ngx_http_post_subrequest_t *ps 传入创建的ngx_http_post_subrequest_t 结构体地址,它指出子
+ * 			请求结束时必须回调的处理方法
+ *
+ * */
 ngx_int_t
 ngx_http_subrequest(ngx_http_request_t *r,
     ngx_str_t *uri, ngx_str_t *args, ngx_http_request_t **psr,

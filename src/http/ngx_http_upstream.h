@@ -398,8 +398,8 @@ struct ngx_http_upstream_s {
     ngx_int_t                      (*create_key)(ngx_http_request_t *r);
 #endif
     /* upstream 9种用户回调函数之一(必须实现)
-     * 在upstream机制启动时调用,生成能够与上游服务器正确通信
-     * 的请求数据,例如http请求头,memchached命令,并把数据已ngx_chain_t的形式存放在
+     * 在upstream机制启动时调用,生成能够与上游服务器正确通信的请求数据,
+     * 例如http请求头,memchached命令,并把数据以ngx_chain_t的形式存放在
      * ngx_http_upstream_t/request_bufs中
      *
      * 生成发送到后端服务器的请求缓冲（缓冲链），在初始化upstream 时使用.*/

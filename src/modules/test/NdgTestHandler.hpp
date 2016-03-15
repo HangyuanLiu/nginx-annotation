@@ -12,8 +12,8 @@ public:
 	static ngx_int_t init(ngx_conf_t* cf)
 	{
 		auto& cmcf = NgxHttpCoreModule::instance().conf().main(cf);
-		typedef NgxArray<ngx_http_handler_pt> handler_array_t;
-		handler_array_t arr(cmcf.phases[NGX_HTTP_REWRITE_PHASE].handlers);
+		NgxArray<ngx_http_handler_pt> arr
+			(cmcf.phases[NGX_HTTP_REWRITE_PHASE].handlers);
 		arr.push(this_type::handler);
 		return NGX_OK;
 	}

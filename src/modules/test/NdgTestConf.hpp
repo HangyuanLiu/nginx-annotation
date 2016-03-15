@@ -19,7 +19,6 @@ public:
 	}
 	static char* merge(ngx_conf_t *cf,void *parent,void *child)
 	{
-		boost::ignore_unused(cf);
 		auto prev = reinterpret_cast<this_type*>(parent);
 		auto conf = reinterpret_cast<this_type*>(child);
 
@@ -29,6 +28,16 @@ public:
 	}
 };
 
-NGX_MOD_INSTANCE(NdgTestModule,ndg_test_module,NdgTestConf)
+struct NdgTestModule{
 
+	static NgxModule<NdgTestConf>& instance(){
+		extern ngx_module_t ndg_test_module;
+		static NgxModule<NdgTestConf> m(ndg_test_module);
+		return m;
+	}
+	NgxModule<NdgTestConf>& operator()() const
+	{
+		return instance();
+	}
+};
 #endif

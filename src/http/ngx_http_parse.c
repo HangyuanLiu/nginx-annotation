@@ -1578,7 +1578,10 @@ args:
     return NGX_OK;
 }
 
-
+/*
+ * http框架提供的ngx_http_parse_status_line方法可以解析http响应行，它的输入就是收到的
+ * 字符流和上下文中的ngx_http_status_t结构
+*/
 ngx_int_t
 ngx_http_parse_status_line(ngx_http_request_t *r, ngx_buf_t *b,
     ngx_http_status_t *status)

@@ -128,11 +128,14 @@ static char* ngx_http_mytest(ngx_conf_t *cf,ngx_command_t *cmd,void *conf)
 	 * ngx_http_core_loc_conf_t结构体
 	 * */
 	clcf = ngx_http_conf_get_module_loc_conf(cf,ngx_http_core_module);
+	/*
+	 * http框架在处理用户请求进行到NGX_HTTP_CONTENT_PHASE阶段时，就将调用我们
+	 * 实现的ngx_http_mytest_handler方法处理这个请求
+	 * */
 	clcf->handler = ngx_http_mytest_handler;
 	return NGX_CONF_OK;
 }
-
-
+/*
 static void* ngx_http_mytest_create_loc_conf(ngx_conf_t *cf)
 {
 	ngx_http_mytest_conf_t *mycf;
@@ -198,7 +201,4 @@ mytest_upstream_create_request(ngx_http_request_t *r)
 	r->header_hash = 1;
 	return NGX_OK;
 }
-
-
-ngx_http_process_headers
-
+*/

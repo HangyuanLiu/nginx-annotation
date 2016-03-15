@@ -53,7 +53,9 @@
 #define NGX_ANY_CONF         0x0F000000
 
 
-
+/* Nginx 采用-1 表示未初始化，由于C是强类型语言
+ * 单纯的整数-1不能直接与其它类型比较，需要做类型转换
+ * */
 #define NGX_CONF_UNSET       -1
 #define NGX_CONF_UNSET_UINT  (ngx_uint_t) -1
 #define NGX_CONF_UNSET_PTR   (void *) -1
@@ -107,15 +109,15 @@ struct ngx_open_file_s {
 struct  ngx_module_s{
 	//下面的七个变量不需要在定义时赋值,一般用Nginx准备好的宏NGX_MODULE_V1来定义
 
-
-
 	/* 当前模块在同类模块中的序号,这个成员常常是由管理这类模块的一个Nginx核心模块设置的
 	 * 对于所有http模块而言,ctx_index是由核心模块ngx_http_module设置的
 	 * Nginx的模块化设计非常依赖于各个模块的顺序,它们既用于表达式优先级,也用于表明各个
 	 * 模块的位置,借以帮助Nginx框架快速获得某个模块的数据
 	 * */
     ngx_uint_t            ctx_index;
-    ngx_uint_t            index;//当前模块在所有模块中的序号
+    /*表示当前模块在ngx_modules数组中的序号，表示在所有模块中的序号
+     * Nginx启动时会根据ngx_modules数组设置各模块的index值*/
+    ngx_uint_t            index;
 
     ngx_uint_t            spare0;
     ngx_uint_t            spare1;
@@ -144,6 +146,7 @@ struct  ngx_module_s{
      * 在Nginx的启动,停止过程中,以下7个函数指针表示有7个执行点会分别调用
      * 这7种方法.不需要则置为NULL
      * */
+    //不使用
     ngx_int_t           (*init_master)(ngx_log_t *log);
     //init_module回调方法在初始化所有模块时(ngx_init_cycle函数中)被调用,在worker/master模式下,这个阶段会在启动worker子进程前完成
     ngx_int_t           (*init_module)(ngx_cycle_t *cycle);

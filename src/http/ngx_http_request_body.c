@@ -28,7 +28,8 @@ static ngx_int_t ngx_http_request_body_chunked_filter(ngx_http_request_t *r,
 /* 用于接收所有的http请求体
  * 是一个异步接收方法，调用它只说明要求nginx开始接收请求的包体
  * 并不表示是否已经接受完，当接受完所有的包体内容后，post_handler指向的回调
- * 方法被调用
+ * 方法被调用。该函数返回时既有可能已经接收完请求中的所有包体，也有可能还没开始
+ * 接收包体
  * */
 ngx_int_t
 ngx_http_read_client_request_body(ngx_http_request_t *r,

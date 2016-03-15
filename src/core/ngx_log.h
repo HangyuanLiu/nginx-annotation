@@ -49,14 +49,20 @@ typedef void (*ngx_log_writer_pt) (ngx_log_t *log, ngx_uint_t level,
 
 
 struct ngx_log_s {
-    ngx_uint_t           log_level;	//日志级别
+	//日志级别或日志类型
+    ngx_uint_t           log_level;
+    //日志文件
     ngx_open_file_t     *file;
-
+    //连接数,不为0时会输出到日志中
     ngx_atomic_uint_t    connection;
 
     time_t               disk_full_time;
-
+    //记录日志时的回调方法.当handler已经实现,并且不是debug	调试级别时,才会调用handler钩子方法
     ngx_log_handler_pt   handler;
+    /* 每个模块都可以自定义data使用方法.通常,data参数都是在实现了上面的handler回调方法后才使用的.
+     * 例如,http框架就定义了handler方法,并在data中放入了这个请求的上下文信息,这样每次输出日志时
+     * 都会把这个请求uri输出到日志的尾部
+     * */
     void                *data;
 
     ngx_log_writer_pt    writer;
@@ -67,7 +73,10 @@ struct ngx_log_s {
      * the static strings and in the "u_char *" case we have to override
      * their types all the time
      */
-
+    /*表示当前的动作.实际上,action与data一样的,只有在实现了handler回调方法后才会使用.
+     * 例如,http框架就在handler方法中检查action是否为NULL,如果不为NULL,就会在日志后加入
+     * "while" + action,以此表示当前日志是在进行什么操作,帮助定位问题
+     * */
     char                *action;
 
     ngx_log_t           *next;	//日志对象链表指针

@@ -1,14 +1,16 @@
 #ifndef _NGX_WRAPPER_HPP
 #define _NGX_WRAPPER_HPP
 
-#include <boost/type_traits.hpp>
+//#include <boost/type_traits.hpp>
+#include <type_traits>
 #include "Nginx.hpp"
 
 template<typename T>
 class NgxWrapper
 {
 public:
-	typedef typename boost::remove_pointer<T>::type wrapped_type;
+	typedef typename std::remove_pointer<T>::type wrapped_type;
+	//typedef typename boost::remove_pointer<T>::type wrapped_type;
 	typedef wrapped_type* pointer_type;
 	typedef wrapped_type& reference_type;
 private:

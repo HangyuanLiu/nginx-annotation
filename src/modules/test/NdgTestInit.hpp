@@ -48,6 +48,7 @@ public:
 				NGX_MODULE_V1,
 				ctx(),
 				cmds(),
+				NGX_HTTP_MODULE,
 				NGX_MODULE_NULL(7),
 				NGX_MODULE_V1_PADDING
 		};

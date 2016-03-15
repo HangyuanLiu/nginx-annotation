@@ -399,7 +399,7 @@ struct ngx_http_request_s {
 #if (NGX_HTTP_CACHE)
     ngx_http_cache_t                 *cache;
 #endif
-
+    //如果该请求有访问第三方上游服务器功能的请求,就必须设置upstream对象,控制upstream功能
     ngx_http_upstream_t              *upstream;
     ngx_array_t                      *upstream_states;
                                          /* of ngx_http_upstream_state_t */

@@ -374,7 +374,12 @@ ngx_http_init_connection(ngx_connection_t *c)
     }
 }
 
-//第一次接收到可读事件后的行为
+/* 第一次接收到可读事件后的行为
+ * http框架并不会在连接建立成功后就开始初始化请求,而是在这个连接对应的套接字缓冲区上
+ * 确实接收到了用户发来的请求内容时才进行,这种设计体现Nginx出于高性能的考虑,这样减少
+ * 无谓的内存消耗,所以当连接建立成功,但是并没有接收数据的过程中,Nginx处于wait_request
+ * 的状态
+ * */
 static void
 ngx_http_wait_request_handler(ngx_event_t *rev)
 {
@@ -407,7 +412,7 @@ ngx_http_wait_request_handler(ngx_event_t *rev)
     size = cscf->client_header_buffer_size;
 
     b = c->buffer;
-
+    //创建接收缓冲区
     if (b == NULL) {
         b = ngx_create_temp_buf(c->pool, size);
         if (b == NULL) {
@@ -512,9 +517,9 @@ ngx_http_wait_request_handler(ngx_event_t *rev)
     ngx_http_process_request_line(rev);
 }
 
-
+//创建ngx_http_request_t请求对象
 ngx_http_request_t *
-ngx_http_create_request(ngx_connection_t *c)	//创建请求对象
+ngx_http_create_request(ngx_connection_t *c)
 {
     ngx_pool_t                 *pool;
     ngx_time_t                 *tp;
@@ -530,7 +535,7 @@ ngx_http_create_request(ngx_connection_t *c)	//创建请求对象
     hc = c->data;
 
     cscf = ngx_http_get_module_srv_conf(hc->conf_ctx, ngx_http_core_module);
-
+    //创建ngx_http_request_t结构体的内存池
     pool = ngx_create_pool(cscf->request_pool_size, c->log);
     if (pool == NULL) {
         return NULL;
@@ -559,7 +564,7 @@ ngx_http_create_request(ngx_connection_t *c)	//创建请求对象
     ngx_set_connection_log(r->connection, clcf->error_log);
 
     r->header_in = hc->nbusy ? hc->busy[0] : c->buffer;
-
+    //创建并初始化ngx_http_request_t结构体中的容器
     if (ngx_list_init(&r->headers_out.headers, r->pool, 20,
                       sizeof(ngx_table_elt_t))
         != NGX_OK)
@@ -567,7 +572,10 @@ ngx_http_create_request(ngx_connection_t *c)	//创建请求对象
         ngx_destroy_pool(r->pool);
         return NULL;
     }
-
+    /*
+     * 创建环境数据数组,长度是所有http模块的数量,将上下文的各种环境数据与对应的请求绑定在一起
+     * 所以可以使用宏 ngx_http_get_module_ctx(r,module) (r)->ctx[module.ctx_index]
+    */
     r->ctx = ngx_pcalloc(r->pool, sizeof(void *) * ngx_http_max_module);
     if (r->ctx == NULL) {
         ngx_destroy_pool(r->pool);
