@@ -4,6 +4,8 @@
 
 //extern char** ngx_http_proxy_hide_headers;
 
+
+
 typedef struct
 {
 	ngx_http_upstream_conf_t upstream;

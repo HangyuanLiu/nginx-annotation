@@ -159,11 +159,11 @@ NGX_CPU_CACHE_LINE=
 NGX_POST_CONF_MSG=
 
 opt=
-
+#for option 可以循环获得命令行参数直到结束
 for option
 do
-    opt="$opt `echo $option | sed -e \"s/\(--[^=]*=\)\(.* .*\)/\1'\2'/\"`"
-
+	# 将等号后面的路径，如果有空格的话，路径加上单引号，\1代表替换之前的括号内的内容，括号需要转义
+	opt="$opt `echo $option | sed -e \"s/\(--[^=]*=\)\(.* .*\)/\1'\2'/\"`"
     case "$option" in
         -*=*) value=`echo "$option" | sed -e 's/[-_a-zA-Z0-9]*=//'` ;;
            *) value="" ;;

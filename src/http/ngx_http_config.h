@@ -41,14 +41,15 @@ typedef struct {
     ngx_int_t   (*postconfiguration)(ngx_conf_t *cf);
 
     /* 回调方法，负责把我们分配的用于保存配置项的结构体传递给HTTP框架
-     * 根据index序号，存储在配置项里
-     * 下面的srv,loc功能相同
+     * 根据index序号，存储在配置项里,它会在解析main配置项前调用
      * 创建用于存储http全局配置项的结构体,该结构体中的成员将保存直属于http{}块的配置项参数
      */
     void       *(*create_main_conf)(ngx_conf_t *cf);
     //解析完main配置项后回调,常用于初始化main级别配置项
     char       *(*init_main_conf)(ngx_conf_t *cf, void *conf);
-
+    /* 创建用于存储可同时出现在main,srv级别配置项的结构体，该结构体中的成员与server配置是
+     * 相关联的
+     * */
     void       *(*create_srv_conf)(ngx_conf_t *cf);
     //merge_srv_conf主要用于合并main级别和srv级别下的同名配置项
     char       *(*merge_srv_conf)(ngx_conf_t *cf, void *prev, void *conf);
@@ -92,6 +93,8 @@ typedef struct {
 #define ngx_http_conf_get_module_loc_conf(cf, module)                         \
     ((ngx_http_conf_ctx_t *) cf->ctx)->loc_conf[module.ctx_index]
 
+/* cycle是ngx_cycle_t核心结构体指针，而module则是所要操作的http模块
+ * */
 #define ngx_http_cycle_get_module_main_conf(cycle, module)                    \
     (cycle->conf_ctx[ngx_http_module.index] ?                                 \
         ((ngx_http_conf_ctx_t *) cycle->conf_ctx[ngx_http_module.index])      \

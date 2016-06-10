@@ -955,7 +955,8 @@ ngx_http_process_request_line(ngx_event_t *rev)
                 return;
             }
         }
-        //用状态机解析已经接收到的tcp字符流，确认其是否构成完整的http请求行，使用ngx_http_request_t结构体中的state成员来保存状态
+        /*用状态机解析已经接收到的tcp字符流，确认其是否构成完整的http请求行，
+        使用ngx_http_request_t结构体中的state成员来保存状态*/
         rc = ngx_http_parse_request_line(r, r->header_in);
 
         if (rc == NGX_OK) {	//表示成功地接收到完整的请求行，为请求的各种信息赋值
@@ -1211,7 +1212,7 @@ ngx_http_process_request_headers(ngx_event_t *rev)
 
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, rev->log, 0,
                    "http process request header line");
-
+    //检查超时
     if (rev->timedout) {
         ngx_log_error(NGX_LOG_INFO, c->log, NGX_ETIMEDOUT, "client timed out");
         c->timedout = 1;
@@ -1228,14 +1229,14 @@ ngx_http_process_request_headers(ngx_event_t *rev)
         if (rc == NGX_AGAIN) {
         	//检查接收http请求头部的header_in缓冲区是否用尽
             if (r->header_in->pos == r->header_in->end) {
-
+            	//分配更大的缓冲区
                 rv = ngx_http_alloc_large_header_buffer(r, 0);
 
                 if (rv == NGX_ERROR) {
                     ngx_http_close_request(r, NGX_HTTP_INTERNAL_SERVER_ERROR);
                     return;
                 }
-
+                //表示已经达到缓冲区大小的上限，无法分配更大的缓冲区
                 if (rv == NGX_DECLINED) {
                     p = r->header_name_start;
 
@@ -1277,7 +1278,7 @@ ngx_http_process_request_headers(ngx_event_t *rev)
         //解析缓冲区中的字符流
         rc = ngx_http_parse_header_line(r, r->header_in,
                                         cscf->underscores_in_headers);
-        //
+        //解析出一行http头部
         if (rc == NGX_OK) {
 
             r->request_length += r->header_in->pos - r->header_name_start;
@@ -1337,7 +1338,7 @@ ngx_http_process_request_headers(ngx_event_t *rev)
 
             continue;
         }
-
+        //表示已经解析出了完整的http头部，可以准备开始处理http请求了
         if (rc == NGX_HTTP_PARSE_HEADER_DONE) {
 
             /* a whole header has been parsed successfully */
@@ -1359,7 +1360,7 @@ ngx_http_process_request_headers(ngx_event_t *rev)
 
             return;
         }
-
+        //表示还需要接收到更多的字符流才能继续解析
         if (rc == NGX_AGAIN) {
 
             /* a header line parsing is still not complete */
@@ -1378,7 +1379,7 @@ ngx_http_process_request_headers(ngx_event_t *rev)
     }
 }
 
-
+//调用封装的recv方法把linux内核套接字缓冲区中的tcp流复制到header_in缓冲区中
 static ssize_t
 ngx_http_read_request_header(ngx_http_request_t *r)
 {
@@ -1399,16 +1400,17 @@ ngx_http_read_request_header(ngx_http_request_t *r)
     if (rev->ready) {
         n = c->recv(c, r->header_in->last,
                     r->header_in->end - r->header_in->last);
-    } else {
+    } else {//还没准备好
         n = NGX_AGAIN;
     }
 
     if (n == NGX_AGAIN) {
+    	//不在定时器中，向定时器添加这个事件
         if (!rev->timer_set) {
             cscf = ngx_http_get_module_srv_conf(r, ngx_http_core_module);
             ngx_add_timer(rev, cscf->client_header_timeout);
         }
-
+        //调用ngx_handler_read_event方法把该读事件添加到epoll中
         if (ngx_handle_read_event(rev, 0) != NGX_OK) {
             ngx_http_close_request(r, NGX_HTTP_INTERNAL_SERVER_ERROR);
             return NGX_ERROR;
@@ -2196,7 +2198,7 @@ ngx_http_find_virtual_server(ngx_connection_t *c,
     return NGX_DECLINED;
 }
 
-
+//http请求上读/写事件的回调方法
 static void
 ngx_http_request_handler(ngx_event_t *ev)
 {
@@ -2240,7 +2242,7 @@ ngx_http_run_posted_requests(ngx_connection_t *c)
         if (pr == NULL) {
             return;
         }
-
+        //将原始请求的posted_request指针指向链表中下一个post请求
         r->main->posted_requests = pr->next;
 
         r = pr->request;
@@ -2730,7 +2732,7 @@ ngx_http_request_finalizer(ngx_http_request_t *r)
     ngx_http_finalize_request(r, 0);
 }
 
-
+//不做任何实质性事情
 void
 ngx_http_block_reading(ngx_http_request_t *r)
 {

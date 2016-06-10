@@ -20,7 +20,9 @@ typedef ngx_int_t   ngx_rbtree_key_int_t;
 typedef struct ngx_rbtree_node_s  ngx_rbtree_node_t;
 
 struct ngx_rbtree_node_s {
+	//每个结点的hash值
     ngx_rbtree_key_t       key;
+    //左子结点
     ngx_rbtree_node_t     *left;
     ngx_rbtree_node_t     *right;
     ngx_rbtree_node_t     *parent;

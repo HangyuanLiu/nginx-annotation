@@ -68,7 +68,7 @@ static ngx_uint_t  ngx_slab_max_size;
 static ngx_uint_t  ngx_slab_exact_size;
 static ngx_uint_t  ngx_slab_exact_shift;
 
-
+//初始化新创建的共享内存
 void
 ngx_slab_init(ngx_slab_pool_t *pool)
 {
@@ -139,7 +139,7 @@ ngx_slab_init(ngx_slab_pool_t *pool)
     pool->zero = '\0';
 }
 
-
+//加锁保护的内存分配方法
 void *
 ngx_slab_alloc(ngx_slab_pool_t *pool, size_t size)
 {
@@ -154,7 +154,7 @@ ngx_slab_alloc(ngx_slab_pool_t *pool, size_t size)
     return p;
 }
 
-//内存申请
+//不加锁保护的内存分配方法
 void *
 ngx_slab_alloc_locked(ngx_slab_pool_t *pool, size_t size)
 {
@@ -432,7 +432,7 @@ ngx_slab_calloc_locked(ngx_slab_pool_t *pool, size_t size)
     return p;
 }
 
-
+//加锁保护的内存释放方法
 void
 ngx_slab_free(ngx_slab_pool_t *pool, void *p)
 {
@@ -443,7 +443,7 @@ ngx_slab_free(ngx_slab_pool_t *pool, void *p)
     ngx_shmtx_unlock(&pool->mutex);
 }
 
-
+//不加锁保护的内存释放方法
 void
 ngx_slab_free_locked(ngx_slab_pool_t *pool, void *p)
 {

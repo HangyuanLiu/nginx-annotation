@@ -160,7 +160,7 @@ typedef struct ngx_http_phase_handler_s  ngx_http_phase_handler_t;
 typedef ngx_int_t (*ngx_http_phase_handler_pt)(ngx_http_request_t *r,
     ngx_http_phase_handler_t *ph);
 
-//ngx_http_phase_handler_t结构体仅表示处理阶段中的一个处理方法
+//ngx_http_phase_handler_t结构体仅表示处理阶段中的一个阶段的处理方法
 struct ngx_http_phase_handler_s {
 	/* 在处理到某一个http阶段时，http框架将会在checker方法已实现的前提下首先调用checker方法
 	 * 来处理请求，而不会直接调用任何阶段中的handler方法，只有在checker方法中才会去调用handler方法
@@ -170,10 +170,11 @@ struct ngx_http_phase_handler_s {
     ngx_http_phase_handler_pt  checker;
     //各个http模块实现的方法
     ngx_http_handler_pt        handler;
+    //下一处理阶段的序号
     ngx_uint_t                 next;
 };
 
-
+//阶段处理引擎
 typedef struct {
 	/* 由ngx_http_phase_handler_t结构体构成的数组，每一个数组成员代表着一个http模块所添加的一个处理方法
 	 * handlers是由ngx_http_phase_handler_t构成的数组首地址，它表示一个请求可能经历的所有ngx_http_handler_pt处理方法
@@ -184,6 +185,11 @@ typedef struct {
      * 阶段处理请求
      * */
     ngx_uint_t                 server_rewrite_index;
+    //location重写快速跳转索引
+    /* 表示NGX_HTTP_REWREITE_PHASE阶段第一个ngx_http_phase_handler_t处理方法在
+     * handlers数组中的序号，用于在执行http请求的任何阶段中快速跳到NGX_HTTP_REWRITE_PHASE
+     * 阶段处理请求
+     * */
     ngx_uint_t                 location_rewrite_index;
 } ngx_http_phase_engine_t;
 
@@ -194,6 +200,13 @@ typedef struct {
 
 //ngx_http_core_module模块的配置结构
 typedef struct {
+	/* 存储指针的动态数组，每个指针指向ngx_http_core_srv_conf_t结构体的地址，也就是其成员
+	 * 类型为ngx_http_core_srv_conf_t**
+	 *
+	 * servers动态数组中的每一个元素都是一个指针，它指向用于表示server块的ngx_http_core_srv_conf_t
+	 * 结构体的地址（属于ngx_http_core_module模块）,ngx_http_core_srv_conf_t结构体中有一个ctx指针
+	 * 它指向解析server块时新生成的ngx_http_conf_ctx_t结构体
+	 * */
     ngx_array_t                servers;         /* ngx_http_core_srv_conf_t */
     //http框架初始化后各个http模块构造的处理方法将组成phase_engine
     ngx_http_phase_engine_t    phase_engine;
@@ -238,7 +251,10 @@ typedef struct {
      * 指向当前server块所属的ngx_http_conf_ctx_t结构体
      * */
     ngx_http_conf_ctx_t        *ctx;
-    //当前server块的虚拟主机名
+    /*
+     * 当前server块的虚拟主机名，如果存在的话，则会与http请求中的Host头部做
+     * 匹配，匹配上后再由当前ngx_http_core_srv_conf_t处理请求
+     * */
     ngx_str_t                   server_name;
 
     size_t                      connection_pool_size;
@@ -320,7 +336,10 @@ typedef struct {
     ngx_uint_t                 naddrs;
 } ngx_http_port_t;
 
-
+/*
+ * 表示一个监听端口，ngx_http_conf_port_t将由全局的
+ * ngx_http_core_main_conf_t结构体保存
+ * */
 typedef struct {
 	//socket地址家族
     ngx_int_t                  family;
@@ -337,8 +356,11 @@ typedef struct {
     /*　以下３个散列表用于加速寻找到对应监听端口上的新连接，确定到底使用哪个server虚拟主机下
      * 的配置来处理它，所有，散列表的值就是ngx_http_core_srv_conf_t结构体的地址
      * */
+    //完全匹配server name 的散列表
     ngx_hash_t                 hash;
+    //通配符前置的散列表
     ngx_hash_wildcard_t       *wc_head;
+    //通配符后置的散列表
     ngx_hash_wildcard_t       *wc_tail;
 
 #if (NGX_PCRE)
@@ -352,6 +374,10 @@ typedef struct {
 
     /* the default server configuration for this address:port */
     ngx_http_core_srv_conf_t  *default_server;
+    /*
+     * servers动态数组中的成员将指向ngx_http_core_srv_conf_t结构体
+     * 就是由servers数组把监听端口与server{}虚拟主机关联起来
+     * */
     ngx_array_t                servers;  /* array of ngx_http_core_srv_conf_t */
 } ngx_http_conf_addr_t;
 
@@ -375,6 +401,7 @@ typedef struct {
 
 
 struct ngx_http_core_loc_conf_s {
+	//location的名称，即nginx.conf中location后的表达式
     ngx_str_t     name;          /* location name */
 
 #if (NGX_PCRE)
@@ -402,6 +429,9 @@ struct ngx_http_core_loc_conf_s {
 #endif
 
     /* pointer to the modules' loc_conf */
+    /* 指向所属location块内ngx_http_conf_ctx_t结构体中的loc_conf指针数组，它保存着当前
+     * location块内所有http模块create_loc_conf方法产生的结构体指针
+     * */
     void        **loc_conf;
 
     uint32_t      limit_except;
@@ -512,7 +542,8 @@ struct ngx_http_core_loc_conf_s {
 
     ngx_uint_t    types_hash_max_size;
     ngx_uint_t    types_hash_bucket_size;
-
+    /* 将同一个server块内多个表达式location块的ngx_http_core_loc_conf_t结构体以双向链表
+     * 发送组织起来，该locations指针将指向ngx_http_location_queue_t结构体*/
     ngx_queue_t  *locations;
 
 #if 0
@@ -520,8 +551,9 @@ struct ngx_http_core_loc_conf_s {
 #endif
 };
 
-//在ngx_http_core_loc_conf_t结构体中有一个成员locations，它表示属于当前块的所有
-//location块通过ngx_http_location_queue_t结构体构成双向链表
+/* 在ngx_http_core_loc_conf_t结构体中有一个成员locations，
+ * 它表示属于当前块的所有location块通过ngx_http_location_queue_t结构体构成双向链表
+ */
 typedef struct {
 	//queue将作为ngx_queue_t双向链表容器，从而将ngx_http_location_queue_t结构体连接起来
     ngx_queue_t                      queue;

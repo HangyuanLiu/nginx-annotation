@@ -427,7 +427,8 @@ struct ngx_http_request_s {
 
     ngx_uint_t                        method;//HTTP方法名
     ngx_uint_t                        http_version;
-    ngx_str_t                         request_line;    //存储完整的请求行字符串
+    //存储完整的请求行字符串,调用函数ngx_http_precess_request_line解析请求行
+    ngx_str_t                         request_line;
     ngx_str_t                         uri;    //请求的uri
     ngx_str_t                         args;    //请求的参数
     ngx_str_t                         exten;	//请求的扩展名
@@ -463,6 +464,10 @@ struct ngx_http_request_s {
      * */
     ngx_int_t                         phase_handler;
     //内容处理函数指针
+    /* Nginx查找location时会检查ngx_http_core_loc_conf的handler成员,如果不为空那么就会
+     * 设置ngx_http_request_t的content_handler.在NGX_HTTP_CONTENT_PHASE阶段如果有
+     * content_handler,那么Nginx就不再检查phases数组,而直接调用这个函数处理
+     * */
     ngx_http_handler_pt               content_handler;
     //访问权限码
     ngx_uint_t                        access_code;

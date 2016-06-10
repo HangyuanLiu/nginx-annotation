@@ -303,7 +303,10 @@ ngx_http_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         return NGX_CONF_ERROR;
     }
 
-
+    /*
+     * 在解析完http块后,ngx_http_block函数会调用所有模块的postconfiguration
+     * 在这里模块可以向phases数组添加元素,把自己的handler注册到合适的阶段
+     * */
     for (m = 0; ngx_modules[m]; m++) {
         if (ngx_modules[m]->type != NGX_HTTP_MODULE) {
             continue;
@@ -447,7 +450,13 @@ ngx_http_init_headers_in_hash(ngx_conf_t *cf, ngx_http_core_main_conf_t *cmcf)
     return NGX_OK;
 }
 
-//从phases数组生成处理引擎phase_engine
+/*
+ * 从phases数组生成处理引擎phase_engine
+ * 函数会遍历phaese数组，计算handler模块的数量，统计所有已经注册的handler数量并分配内存
+ * 在按阶段分类，把每个handler与对应阶段的checker组合起来，填入引擎数组。
+ * phaes_engine的handler数组把各个模块的handler组成了一个线性的数组，原本的二维数组phases
+ * 转变成了一维数组，可以高效地访问
+*/
 static ngx_int_t
 ngx_http_init_phase_handlers(ngx_conf_t *cf, ngx_http_core_main_conf_t *cmcf)
 {
@@ -480,10 +489,10 @@ ngx_http_init_phase_handlers(ngx_conf_t *cf, ngx_http_core_main_conf_t *cmcf)
     n = 0;
 
     for (i = 0; i < NGX_HTTP_LOG_PHASE; i++) {
-        h = cmcf->phases[i].handlers.elts;
+        h = cmcf->phases[i].handlers.elts; 	//本阶段的handler数组
 
         switch (i) {
-
+        //rewrite阶段代码
         case NGX_HTTP_SERVER_REWRITE_PHASE:
             if (cmcf->phase_engine.server_rewrite_index == (ngx_uint_t) -1) {
                 cmcf->phase_engine.server_rewrite_index = n;
@@ -551,10 +560,10 @@ ngx_http_init_phase_handlers(ngx_conf_t *cf, ngx_http_core_main_conf_t *cmcf)
         }
 
         n += cmcf->phases[i].handlers.nelts;
-
+        //反向遍历phases数组，向引擎数组添加元素
         for (j = cmcf->phases[i].handlers.nelts - 1; j >=0; j--) {
-            ph->checker = checker;
-            ph->handler = h[j];
+            ph->checker = checker;	//设置checker
+            ph->handler = h[j];	//设置handler
             ph->next = n;	//设置阶段跳转序号
             ph++;
         }
@@ -574,29 +583,38 @@ ngx_http_merge_servers(ngx_conf_t *cf, ngx_http_core_main_conf_t *cmcf,
     ngx_http_core_loc_conf_t    *clcf;
     ngx_http_core_srv_conf_t   **cscfp;
 
+    /* 从ngx_http_core_main_conf_t的servers动态数组中可以获取所有的
+     * ngx_http_core_srv_conf_t结构体
+     * */
     cscfp = cmcf->servers.elts;
+    //在http{}块下的全局ngx_http_core_srv_conf_t结构体
     ctx = (ngx_http_conf_ctx_t *) cf->ctx;
     saved = *ctx;
     rv = NGX_CONF_OK;
-
+    //遍历所有的server块下对应的ngx_http_core_srv_conf_t结构体
     for (s = 0; s < cmcf->servers.nelts; s++) {
 
         /* merge the server{}s' srv_conf's */
-
+    	//srv_conf将指向所有的http模块产生的server相关的srv级别配置结构体
         ctx->srv_conf = cscfp[s]->ctx->srv_conf;
-
+        //如果当前http模块实现了merge_srv_conf，则再调用合并方法
         if (module->merge_srv_conf) {
+        	/* 在这里合并配置项时，saved.srv_conf[ctx_index]参数是当前http模块
+        	 * 在http{}块下由create_srv_conf方法创建的结构体，
+        	 * 而cscfp[s]->ctx_srv_conf[ctx_index]参数则是在server{}块下
+        	 * 由create_srv_conf方法创建的结构体
+        	 * */
             rv = module->merge_srv_conf(cf, saved.srv_conf[ctx_index],
                                         cscfp[s]->ctx->srv_conf[ctx_index]);
             if (rv != NGX_CONF_OK) {
                 goto failed;
             }
         }
-
+        //如果当前http模块实现了merge_loc_conf，则再调用合并方法
         if (module->merge_loc_conf) {
 
             /* merge the server{}'s loc_conf */
-
+        	/* 这个动态数组中的成员都是有server{}块下所有http模块的create_loc_conf方法创建的结构体指针*/
             ctx->loc_conf = cscfp[s]->ctx->loc_conf;
 
             rv = module->merge_loc_conf(cf, saved.loc_conf[ctx_index],
@@ -606,7 +624,10 @@ ngx_http_merge_servers(ngx_conf_t *cf, ngx_http_core_main_conf_t *cmcf,
             }
 
             /* merge the locations{}' loc_conf's */
-
+            /* clcf是server块下ngx_http_core_module模块使用create_loc_conf方法产生的
+             * ngx_http_core_loc_conf_t结构体，它的locations成员将以双向链表的形式关联到
+             * 所有当前server{}块下的location块
+             * */
             clcf = cscfp[s]->ctx->loc_conf[ngx_http_core_module.ctx_index];
 
             rv = ngx_http_merge_locations(cf, clcf->locations,

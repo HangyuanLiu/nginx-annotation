@@ -112,14 +112,14 @@ public:
     }
 
 public:
-    ngx_int_t send() const
+    ngx_int_t send() const	//发送响应头
     {
-        if(get()->header_sent)
+        if(get()->header_sent)	//检查header_sent标志位，如果已经发送就不需要再继续操作
         {
             return NGX_OK;
         }
 
-        if(!headers()->status)
+        if(!headers()->status)	//状态码是否已经设置
         {
             headers()->status = NGX_HTTP_OK;
         }
@@ -132,10 +132,10 @@ public:
         return rc;
     }
 public:
-    ngx_int_t send(ngx_chain_t* out) const
+    ngx_int_t send(ngx_chain_t* out) const	//发送响应体数据
     {
         send();      // send headers
-
+        //检查是否有数据，并发送响应数据
         return out && !get()->header_only ?
                ngx_http_output_filter(get(), out) : NGX_OK;
     }
@@ -151,12 +151,12 @@ public:
         return send(ch);
     }
 
-    ngx_int_t send(ngx_str_t* str) const
+    ngx_int_t send(ngx_str_t* str) const	//发送ngx_str_t对象
     {
-        NgxBuf buf = m_pool.buffer();
-        buf.range(str);
+        NgxBuf buf = m_pool.buffer();	//创建缓冲区对象
+        buf.range(str);	//设置缓冲区数据
 
-        return send(buf);
+        return send(buf);	//发送数据
     }
 
     ngx_int_t send(string_ref_type str) const

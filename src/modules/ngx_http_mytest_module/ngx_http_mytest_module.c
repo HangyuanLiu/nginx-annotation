@@ -12,7 +12,6 @@ typedef struct
 }ngx_http_mytest_ctx_t;
 
 
-
 static char* ngx_http_mytest(ngx_conf_t *cf,ngx_command_t *cmd,void *conf);
 
 

@@ -841,7 +841,7 @@ ngx_http_handler(ngx_http_request_t *r)
         r->phase_handler = 0;	//意味着从ngx_http_phase_engine_t指定数组的第一个回调方法开始执行
 
     } else {
-    	/* internal 为1则表示要内部跳转。把结构体中的phase_handler序号置为server_rewrite_index
+    	/* internal 为1则表示要内部跳转。将把结构体中的phase_handler序号置为server_rewrite_index
     	 * server_rewrite_index是handlers数组中NGX_HTTP_SERVER_REWRITE_PHASE处理阶段的第一个
     	 * ngx_http_phase_handler_t回调方法所处的位置
     	*/
@@ -860,7 +860,7 @@ ngx_http_handler(ngx_http_request_t *r)
     ngx_http_core_run_phases(r);
 }
 
-//开始调用各个http模块共同处理请求,执行引擎
+//执行引擎,开始调用各个http模块共同处理请求，控制各个http模块实现的处理方法
 void
 ngx_http_core_run_phases(ngx_http_request_t *r)
 {
@@ -886,7 +886,8 @@ ngx_http_core_run_phases(ngx_http_request_t *r)
 /*
  * ngx_http_core_generic_phase为HTTP框架的
  * NGX_HTTP_POST_READ_PHASE阶段(第一阶段)的checker方法.
- *
+ * NGX_HTTP_PREACCESS_PHASE阶段(第六阶段)的checker方法.
+ * NGX_HTTP_LOG_PHASE阶段(第十一阶段)的checker方法.
  * */
 ngx_int_t
 ngx_http_core_generic_phase(ngx_http_request_t *r, ngx_http_phase_handler_t *ph)
@@ -1406,7 +1407,7 @@ ngx_http_core_content_phase(ngx_http_request_t *r,
     size_t     root;
     ngx_int_t  rc;
     ngx_str_t  path;
-
+    //Nginx会优先调用在配置文件location里设置的处理函数
     if (r->content_handler) {	//检查是否有location内容处理函数
     	/*
     	 * 将write_event_handler成员设置为不做任何事的ngx_http_request_empty_handler方法
